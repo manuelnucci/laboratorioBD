@@ -1,0 +1,5 @@
+Server name: den1.mssql7.gear.host
+
+Username: laboratorio
+
+Password: laboratorio7*
