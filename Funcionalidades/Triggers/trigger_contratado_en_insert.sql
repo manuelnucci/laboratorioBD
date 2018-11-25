@@ -20,7 +20,8 @@ BEGIN
         @id_trabajo INT,
         @num_area INT,
         @inicio_contrato DATE,
-        @fin_contrato DATE;
+        @fin_contrato DATE,
+        @cond_trabajo INT;
 
     DECLARE cur CURSOR FOR
     SELECT id_empleado, id_trabajo, num_area, inicio_contrato, fin_contrato
@@ -37,7 +38,7 @@ BEGIN
             WHERE id_trabajo = @id_trabajo
             GROUP BY id_trabajo, num_area, inicio_contrato
 
-            IF cond_trabajo = 1 -- Los trabajos son exclusivos por área y contrato
+            IF @cond_trabajo = 1 -- Los trabajos para un grupo de empleados son exclusivos por área y contrato
             BEGIN
                 INSERT INTO [dbo].[contratado_en]
                            ([id_empleado]
@@ -52,11 +53,16 @@ BEGIN
                     ,@inicio_contrato
                     ,@fin_contrato);
             END;
+            ELSE
+            BEGIN
+                PRINT 'Se quiso insertar más de un trabajo para un mismo empleado, área y contrato.'
+            END;
         END;
         ELSE
         BEGIN
-            PRINT 'El registro del empleado con id = ' + @id_empleado + ' que lo vincula con un 
-                   trabajo y un área no pudo ser insertado por ser inválida el área.';
+            PRINT 'El registro del empleado con id = ' + CAST(@id_empleado AS VARCHAR) + 
+                  ' que lo vincula con un trabajo y un área no pudo ser insertado por ser inválida
+                    el área.';
         END;
         FETCH NEXT FROM cur INTO @id_empleado, @id_trabajo, @num_area, @inicio_contrato, @fin_contrato;
     END;

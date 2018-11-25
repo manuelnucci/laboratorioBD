@@ -38,8 +38,9 @@ BEGIN
         END;
         ELSE
         BEGIN
-            PRINT 'El registro del empleado con id = ' + @id_empleado + ' que lo vincula con una 
-                   franja horaria y un área no pudo ser modificado por ser inválida el área.';
+            PRINT 'El registro del empleado con id = ' + CAST(@id_empleado AS VARCHAR) + ' que lo 
+                   vincula con una franja horaria y un área no pudo ser modificado por ser inválida 
+                   el área.';
         END;
         FETCH NEXT FROM cur INTO @id_empleado, @id_franja, @num_area;
     END;

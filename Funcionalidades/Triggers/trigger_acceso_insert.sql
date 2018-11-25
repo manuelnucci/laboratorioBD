@@ -30,7 +30,7 @@ BEGIN
     BEGIN
         IF dbo.validador(@id_empleado, @num_area, 4) = 1
         BEGIN
-            INSERT INTO [dbo].[contratado_en]
+            INSERT INTO [dbo].[acceso]
                        ([id_empleado]
                        ,[id_franja]
                        ,[num_area])
@@ -41,10 +41,11 @@ BEGIN
         END;
         ELSE
         BEGIN
-            PRINT 'El registro del empleado con id = ' + @id_empleado + ' que lo vincula con una 
-                   franja horaria y un área no pudo ser insertado por ser inválida el área.';
+            PRINT 'El registro del empleado con id = ' + CAST(@id_empleado AS VARCHAR) + ' que lo 
+                   vincula con una franja horaria y un área no pudo ser insertado por ser inválida 
+                   el área.';
         END;
-        FETCH NEXT FROM cur INTO @id_empleado, @id_trabajo, @num_area;
+        FETCH NEXT FROM cur INTO @id_empleado, @id_franja, @num_area;
     END;
 
     CLOSE cur;

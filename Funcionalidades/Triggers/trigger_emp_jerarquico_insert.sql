@@ -41,7 +41,8 @@ BEGIN
         END;
         ELSE
         BEGIN
-            PRINT 'El registro del empleado con id = ' + @id_empleado + 'no pudo ser insertado';
+            PRINT 'El registro del empleado con id = ' + CAST(@id_empleado AS VARCHAR) + 
+                  ' no ha podido ser insertado.';
         END;
         FETCH NEXT FROM cur INTO @id_empleado, @num_area, @fecha_asignacion;
     END;

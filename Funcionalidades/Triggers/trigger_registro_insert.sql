@@ -22,7 +22,10 @@ BEGIN
         @accion VARCHAR(15),
         @fecha_hora SMALLDATETIME,
         @autorizado CHAR(2),
-        @condicion CHAR(2);
+        @ultima_accion VARCHAR(15),
+        @condicion CHAR(2),
+        @categoria VARCHAR(20);
+
         SET @condicion = 'No';
 
     DECLARE cur CURSOR FOR
@@ -33,38 +36,48 @@ BEGIN
     FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
-        SELECT condicion = @autorizado
+        -- Buscar la última acción del empleado en esa área, sea del día actual o un día anterior
+        SELECT @ultima_accion = accion, @condicion = autorizado
         FROM registro R1
         WHERE id_empleado = @id_empleado AND 
-              num_area = @num_area AND 
-              accion = @accion AND 
-              CONVERT(date, R1.fecha_hora, 101) = GETDATE() AND
-              CONVERT(time, R1.fecha_hora) = (SELECT MAX(CONVERT(time, R2.fecha_hora)) 
-                                              FROM registro R2
-                                              WHERE R2.id_empleado = @id_empleado
-                                                    AND R2.num_area = @num_area
-                                                    AND R2.accion = @accion
-            				                        AND CONVERT(date, R2.fecha_hora, 101) = GETDATE());
+              num_area = @num_area AND
+              R1.fecha_hora = (SELECT MAX(R2.fecha_hora)
+                               FROM registro R2
+                               WHERE R2.id_empleado = @id_empleado AND
+                                     R2.num_area = @num_area);
 
-        IF @condicion = 'Si'-- Lo ultimo que se registró de ese empleado en esa area es un ingreso o
-                            -- egreso exitoso, y nuevamente quiere realizar lo mismo
+        IF (@accion = @ultima_accion AND @condicion = 'No') -- El empleado quiere volver a realizar la misma acción luego de un intento fallido
+            OR
+           (@accion <> @ultima_accion AND @condicion = 'Si') -- El empleado quiere realizar la acción opuesta a lo último registrado luego de un éxito previo
         BEGIN
-            PRINT @accion + ' no autorizado.';
+            SELECT @categoria = categoria
+            FROM area
+            INNER JOIN nivel_seguridad NS ON area.id_nivel_seg = NS.id_nivel_seg
+            WHERE area.num_area = @num_area;
+
+            IF @categoria = 'Restringido'
+            BEGIN
+                INSERT INTO [dbo].[registro]
+                           ([id_empleado]
+                           ,[num_area]
+                           ,[accion]
+                           ,[fecha_hora]
+                           ,[autorizado])
+                VALUES
+                    (@id_empleado
+                    ,@num_area
+                    ,@accion
+                    ,@fecha_hora
+                    ,@autorizado);
+            END;
+            ELSE
+            BEGIN
+                PRINT 'El área que se intentó insertar no es de acceso restringido.'
+            END;
         END;
         ELSE
         BEGIN
-            INSERT INTO [dbo].[registro]
-                       ([id_empleado]
-                       ,[num_area]
-                       ,[accion]
-                       ,[fecha_hora]
-                       ,[autorizado])
-            VALUES
-                (@id_empleado
-                ,@num_area
-                ,@accion
-                ,@fecha_hora
-                ,@autorizado);
+            PRINT CAST(@accion AS VARCHAR) + ' no autorizado.';
         END;
         FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
     END;

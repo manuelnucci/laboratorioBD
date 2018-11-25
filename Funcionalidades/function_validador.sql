@@ -22,7 +22,7 @@ BEGIN
     INNER JOIN nivel_seguridad NS ON E.id_nivel_seg = NS.id_nivel_seg
     WHERE E.id_empleado = @id_empleado;
 
-    SELECT @id_nivel_seg_area = A.id_nivel_seg, @nombre_id_nivel_seg_emp = NS.nombre
+    SELECT @id_nivel_seg_area = A.id_nivel_seg, @nombre_id_nivel_seg_area = NS.nombre
     FROM area A
     INNER JOIN nivel_seguridad NS ON A.id_nivel_seg = NS.id_nivel_seg
     WHERE A.num_area = @num_area;
