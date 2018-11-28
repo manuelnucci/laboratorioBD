@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_area_emp_jerarq_insert;
-GO
-
-CREATE TRIGGER validar_area_emp_jerarq_insert 
+CREATE OR ALTER TRIGGER validar_area_emp_jerarq_insert 
 ON dbo.empleado_jerarquico
 INSTEAD OF INSERT
 AS

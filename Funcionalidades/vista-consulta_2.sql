@@ -1,4 +1,5 @@
-CREATE OR ALTER VIEW intentos_fallidos AS 
+CREATE OR ALTER VIEW intentos_fallidos 
+AS 
 SELECT empleado.id_empleado,
        empleado.nombre,
        empleado.apellido,

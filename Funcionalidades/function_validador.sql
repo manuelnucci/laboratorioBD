@@ -5,8 +5,8 @@ GO
 
 CREATE FUNCTION validador
     (@id_empleado INT,
-    @num_area INT,
-    @tipo_empleado INT) -- 1 Emp Jerarq, 2 EPPermanente, 3 EPContratado, 4 EmpNoProf
+     @num_area INT,
+     @tipo_empleado INT) -- 1 Emp Jerarq, 2 EPPermanente, 3 EPContratado, 4 EmpNoProf
 RETURNS INT
 AS
 BEGIN

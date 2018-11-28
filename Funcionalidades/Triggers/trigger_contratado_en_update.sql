@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_area_emp_prof_contr_update;
-GO
-
-CREATE TRIGGER validar_area_emp_prof_contr_update
+CREATE OR ALTER TRIGGER validar_area_emp_prof_contr_update
 ON dbo.contratado_en
 INSTEAD OF UPDATE
 AS

@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_area_emp_no_prof_update;
-GO
-
-CREATE TRIGGER validar_area_emp_no_prof_update 
+CREATE OR ALTER TRIGGER validar_area_emp_no_prof_update 
 ON dbo.acceso
 INSTEAD OF UPDATE
 AS

@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_franja_horaria_insert;
-GO
-
-CREATE TRIGGER validar_franja_horaria_insert 
+CREATE OR ALTER TRIGGER validar_franja_horaria_insert 
 ON dbo.franja_horaria
 INSTEAD OF INSERT
 AS

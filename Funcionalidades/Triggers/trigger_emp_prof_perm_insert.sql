@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_area_emp_prof_perm_insert;
-GO
-
-CREATE TRIGGER validar_area_emp_prof_perm_insert 
+CREATE OR ALTER TRIGGER validar_area_emp_prof_perm_insert 
 ON dbo.empleado_prof_permanente
 INSTEAD OF INSERT
 AS

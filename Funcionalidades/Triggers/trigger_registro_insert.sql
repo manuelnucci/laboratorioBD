@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_ingreso_egreso_area_insert;
-GO
-
-CREATE TRIGGER validar_ingreso_egreso_area_insert 
+CREATE OR ALTER TRIGGER validar_ingreso_egreso_area_insert 
 ON dbo.registro
 INSTEAD OF INSERT
 AS
@@ -36,48 +33,50 @@ BEGIN
     FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
-        -- Buscar la última acción del empleado en esa área, sea del día actual o un día anterior
-        SELECT @ultima_accion = accion, @condicion = autorizado
-        FROM registro R1
-        WHERE id_empleado = @id_empleado AND 
-              num_area = @num_area AND
-              R1.fecha_hora = (SELECT MAX(R2.fecha_hora)
-                               FROM registro R2
-                               WHERE R2.id_empleado = @id_empleado AND
-                                     R2.num_area = @num_area);
+        SELECT @categoria = categoria
+        FROM area
+        INNER JOIN nivel_seguridad NS ON area.id_nivel_seg = NS.id_nivel_seg
+        WHERE area.num_area = @num_area;
 
-        IF (@accion = @ultima_accion AND @condicion = 'No') -- El empleado quiere volver a realizar la misma acción luego de un intento fallido
-            OR
-           (@accion <> @ultima_accion AND @condicion = 'Si') -- El empleado quiere realizar la acción opuesta a lo último registrado luego de un éxito previo
+        IF @categoria = 'Restringido'
         BEGIN
-            SELECT @categoria = categoria
-            FROM area
-            INNER JOIN nivel_seguridad NS ON area.id_nivel_seg = NS.id_nivel_seg
-            WHERE area.num_area = @num_area;
+            -- Buscar la última acción del empleado en esa área, sea del día actual o un día anterior
+            SELECT @ultima_accion = accion, @condicion = autorizado
+            FROM registro R1
+            WHERE id_empleado = @id_empleado AND 
+                num_area = @num_area AND
+                R1.fecha_hora = (SELECT MAX(R2.fecha_hora)
+                                FROM registro R2
+                                WHERE R2.id_empleado = @id_empleado AND
+                                        R2.num_area = @num_area);
 
-            IF @categoria = 'Restringido'
+            IF (@accion = @ultima_accion AND @condicion = 'No') -- El empleado quiere volver a realizar la misma acción luego de un intento fallido
+                OR
+            (@accion <> @ultima_accion AND @condicion = 'Si') -- El empleado quiere realizar la acción opuesta a lo último registrado luego de un éxito previo
             BEGIN
-                INSERT INTO [dbo].[registro]
-                           ([id_empleado]
-                           ,[num_area]
-                           ,[accion]
-                           ,[fecha_hora]
-                           ,[autorizado])
-                VALUES
-                    (@id_empleado
-                    ,@num_area
-                    ,@accion
-                    ,@fecha_hora
-                    ,@autorizado);
+                SET @autorizado = 'Si';
             END;
             ELSE
             BEGIN
-                PRINT 'El área que se intentó insertar no es de acceso restringido.'
+                SET @autorizado = 'No';
+                PRINT CAST(@accion AS VARCHAR) + ' no autorizado.';
             END;
+            INSERT INTO [dbo].[registro]
+                        ([id_empleado]
+                        ,[num_area]
+                        ,[accion]
+                        ,[fecha_hora]
+                        ,[autorizado])
+            VALUES
+                (@id_empleado
+                ,@num_area
+                ,@accion
+                ,@fecha_hora
+                ,@autorizado);
         END;
         ELSE
         BEGIN
-            PRINT CAST(@accion AS VARCHAR) + ' no autorizado.';
+            PRINT 'El área que se intentó insertar no es de acceso restringido.'
         END;
         FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
     END;

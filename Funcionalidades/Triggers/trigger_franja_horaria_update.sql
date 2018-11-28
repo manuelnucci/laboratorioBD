@@ -6,10 +6,7 @@ GO
 USE laboratorio;
 GO
 
-DROP TRIGGER IF EXISTS validar_franja_horaria_update;
-GO
-
-CREATE TRIGGER validar_franja_horaria_update
+CREATE OR ALTER TRIGGER validar_franja_horaria_update
 ON dbo.franja_horaria
 INSTEAD OF UPDATE
 AS
@@ -37,7 +34,7 @@ BEGIN
         END;
         ELSE
         BEGIN
-            PRINT 'No se ha podido insertar el registro de la franja horaria.';
+            PRINT 'No se ha podido modificar el registro de la franja horaria.';
         END;
         FETCH NEXT FROM cur INTO @id_franja, @horario_inicio, @horario_fin;
     END;
