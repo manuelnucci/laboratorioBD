@@ -1,0 +1,16 @@
+Presentación del tema
+2 o 3 tópicos
+Comparación con el paradigma relacional
+Aplicaciones - Orientación según la base de datos que sea
+Paradigma
+Sistemas comerciales que existen de este paradigma
+Conclusiones
+
+Referencias:
+	Libros
+	Artículos
+	Papers
+Deben ser serias
+
+Presentación que sea un apoyo, no puro texto
+Incluir ejemplo práctico en lo posible

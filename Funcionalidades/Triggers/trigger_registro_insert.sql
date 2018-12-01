@@ -15,22 +15,22 @@ BEGIN
     DECLARE
         @id_empleado INT,
         @num_area INT,
-        @num_registro INT,
         @accion VARCHAR(15),
-        @fecha_hora SMALLDATETIME,
+        @fecha_hora DATETIME,
         @autorizado CHAR(2),
         @ultima_accion VARCHAR(15),
         @condicion CHAR(2),
-        @categoria VARCHAR(20);
-
-        SET @condicion = 'No';
+        @ult_fecha_hora DATETIME,
+        @categoria VARCHAR(20),
+        @tipo_empleado INT,
+        @primera_vez INT;
 
     DECLARE cur CURSOR FOR
-    SELECT id_empleado, num_area, num_registro, accion, fecha_hora, autorizado
+    SELECT id_empleado, num_area, accion, fecha_hora, autorizado
     FROM inserted
     OPEN cur;
 
-    FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
+    FETCH NEXT FROM cur INTO @id_empleado, @num_area, @accion, @fecha_hora, @autorizado;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
         SELECT @categoria = categoria
@@ -41,44 +41,73 @@ BEGIN
         IF @categoria = 'Restringido'
         BEGIN
             -- Buscar la última acción del empleado en esa área, sea del día actual o un día anterior
-            SELECT @ultima_accion = accion, @condicion = autorizado
-            FROM registro R1
-            WHERE id_empleado = @id_empleado AND 
-                num_area = @num_area AND
-                R1.fecha_hora = (SELECT MAX(R2.fecha_hora)
-                                FROM registro R2
-                                WHERE R2.id_empleado = @id_empleado AND
-                                        R2.num_area = @num_area);
-
-            IF (@accion = @ultima_accion AND @condicion = 'No') -- El empleado quiere volver a realizar la misma acción luego de un intento fallido
-                OR
-            (@accion <> @ultima_accion AND @condicion = 'Si') -- El empleado quiere realizar la acción opuesta a lo último registrado luego de un éxito previo
+            IF EXISTS (SELECT *
+                       FROM registro R1
+                       WHERE id_empleado = @id_empleado AND
+                             num_area = @num_area)
             BEGIN
-                SET @autorizado = 'Si';
+                SELECT @ultima_accion = R1.accion, 
+                       @condicion = R1.autorizado, 
+                       @ult_fecha_hora = R1.fecha_hora
+                FROM registro R1
+                WHERE id_empleado = @id_empleado AND 
+                    num_area = @num_area AND
+                    R1.fecha_hora = (SELECT MAX(R2.fecha_hora)
+                                     FROM registro R2
+                                     WHERE R2.id_empleado = @id_empleado AND
+                                           R2.num_area = @num_area);
+                SET @primera_vez = 0;
             END;
             ELSE
             BEGIN
-                SET @autorizado = 'No';
-                PRINT CAST(@accion AS VARCHAR) + ' no autorizado.';
+                SET @primera_vez = 1;
             END;
-            INSERT INTO [dbo].[registro]
-                        ([id_empleado]
-                        ,[num_area]
-                        ,[accion]
-                        ,[fecha_hora]
-                        ,[autorizado])
-            VALUES
-                (@id_empleado
-                ,@num_area
-                ,@accion
-                ,@fecha_hora
-                ,@autorizado);
+
+            IF @primera_vez = 1 OR @fecha_hora > @ult_fecha_hora
+            BEGIN
+                IF EXISTS (SELECT *
+                           FROM empleado_no_profesional
+                           WHERE id_empleado = @id_empleado)
+                    SET @tipo_empleado = 1;
+                ELSE
+                    SET @tipo_empleado = 0;
+
+                IF  @autorizado = 'CR' AND (@primera_vez = 1 OR
+                    ((@accion = @ultima_accion AND @condicion = 'No') -- El empleado quiere volver a realizar la misma acción luego de un intento fallido
+                    OR
+                    (@accion <> @ultima_accion))) -- El empleado quiere realizar la acción opuesta a lo último registrado luego de un éxito previo
+                    AND
+                    dbo.validar_ingreso_egreso(@id_empleado, @num_area, @tipo_empleado) = 1 -- Puede acceder al área
+                BEGIN
+                    SET @autorizado = 'Si';
+                END;
+                ELSE
+                BEGIN
+                    SET @autorizado = 'No';
+                    PRINT CAST(@accion AS VARCHAR) + ' no autorizado.';
+                END;
+                PRINT @autorizado
+                PRINT @primera_vez
+                PRINT dbo.validar_ingreso_egreso(@id_empleado, @num_area, @tipo_empleado)
+                INSERT INTO [dbo].[registro]
+                            ([id_empleado]
+                            ,[num_area]
+                            ,[accion]
+                            ,[fecha_hora]
+                            ,[autorizado])
+                VALUES
+                    (@id_empleado
+                    ,@num_area
+                    ,@accion
+                    ,@fecha_hora
+                    ,@autorizado);
+            END;
+            ELSE
+                PRINT 'La fecha y hora ingresadas son menores o iguales a la última registrada.'
         END;
         ELSE
-        BEGIN
             PRINT 'El área que se intentó insertar no es de acceso restringido.'
-        END;
-        FETCH NEXT FROM cur INTO @id_empleado, @num_area, @num_registro, @accion, @fecha_hora, @autorizado;
+        FETCH NEXT FROM cur INTO @id_empleado, @num_area, @accion, @fecha_hora, @autorizado;
     END;
 
     CLOSE cur;

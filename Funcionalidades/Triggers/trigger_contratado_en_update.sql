@@ -27,7 +27,7 @@ BEGIN
     FETCH NEXT FROM cur INTO @id_empleado, @id_trabajo, @num_area, @inicio_contrato, @fin_contrato;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
-        IF dbo.validador(@id_empleado, @num_area, 3) = 1 AND DATEDIFF(day, @inicio_contrato, @fin_contrato) > 0
+        IF dbo.validador(@id_empleado, @num_area, 0) = 1 AND DATEDIFF(day, @inicio_contrato, @fin_contrato) > 0
         BEGIN
             UPDATE [dbo].[contratado_en]
             SET [id_empleado] = @id_empleado

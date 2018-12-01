@@ -1,10 +1,10 @@
 CREATE OR ALTER PROCEDURE consulta_1
 AS
-SELECT empleado.nombre, empleado.apellido, empleado.id_empleado 
-FROM   empleado 
+SELECT E.nombre, E.apellido, E.id_empleado 
+FROM   empleado E
 WHERE  NOT EXISTS (SELECT * 
-                   FROM area 
-                   WHERE NOT EXISTS (SELECT * 
-                                     FROM acceso 
-                                     WHERE acceso.id_empleado = empleado.id_empleado AND
-                                           acceso.num_area = area.num_area));
+                   FROM area A
+                   WHERE A.id_nivel_seg= E.id_nivel_seg AND NOT EXISTS (SELECT * 
+																		FROM acceso AC
+																		WHERE AC.id_empleado = E.id_empleado AND
+																			  AC.num_area = A.num_area));

@@ -28,14 +28,16 @@ BEGIN
     FETCH NEXT FROM cur INTO @id_empleado, @id_trabajo, @num_area, @inicio_contrato, @fin_contrato;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
-        IF dbo.validador(@id_empleado, @num_area, 3) = 1 AND DATEDIFF(day, @inicio_contrato, @fin_contrato) > 0
+        IF dbo.validador(@id_empleado, @num_area, 0) = 1 AND DATEDIFF(day, @inicio_contrato, @fin_contrato) > 0
         BEGIN
-            SELECT cond_trabajo = COUNT(*)
-            FROM contratado_en
-            WHERE id_trabajo = @id_trabajo
-            GROUP BY id_trabajo, num_area, inicio_contrato
-
-            IF @cond_trabajo = 1 -- Los trabajos para un grupo de empleados son exclusivos por área y contrato
+            IF EXISTS (SELECT * -- El trabajo que quiero insertar se aparea con trabajos existentes en el mismo area y contrato
+                       FROM contratado_en
+                       WHERE id_trabajo = @id_trabajo AND 
+                             inicio_contrato = @inicio_contrato AND 
+                             num_area = @num_area)
+                OR NOT EXISTS (SELECT * -- No existe el trabajo, es el primero
+                               FROM contratado_en
+                               WHERE id_trabajo = @id_trabajo)
             BEGIN
                 INSERT INTO [dbo].[contratado_en]
                            ([id_empleado]

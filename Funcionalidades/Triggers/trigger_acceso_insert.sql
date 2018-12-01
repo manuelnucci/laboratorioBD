@@ -25,7 +25,7 @@ BEGIN
     FETCH NEXT FROM cur INTO @id_empleado, @id_franja, @num_area;
     WHILE @@FETCH_STATUS = 0 
     BEGIN
-        IF dbo.validador(@id_empleado, @num_area, 4) = 1
+        IF dbo.validador(@id_empleado, @num_area, 1) = 1
         BEGIN
             INSERT INTO [dbo].[acceso]
                        ([id_empleado]

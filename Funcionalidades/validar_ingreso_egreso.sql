@@ -3,10 +3,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE FUNCTION validador
+CREATE OR ALTER FUNCTION validar_ingreso_egreso
     (@id_empleado INT,
      @num_area INT,
-     @tipo_empleado INT) -- 1 Emp Jerarq, 2 EPPermanente, 3 EPContratado, 4 EmpNoProf
+     @tipo_empleado INT) -- 1 EmpNoProf, 0 Cualquier otro tipo de empleado
 RETURNS INT
 AS
 BEGIN
@@ -15,7 +15,7 @@ BEGIN
         @nombre_id_nivel_seg_emp VARCHAR(15),
         @id_nivel_seg_area INT,
         @nombre_id_nivel_seg_area VARCHAR(15),
-		@nReturn INT;
+		@return INT;
 
     SELECT @id_nivel_seg_emp = E.id_nivel_seg, @nombre_id_nivel_seg_emp = NS.nombre
     FROM empleado E
@@ -27,13 +27,16 @@ BEGIN
     INNER JOIN nivel_seguridad NS ON A.id_nivel_seg = NS.id_nivel_seg
     WHERE A.num_area = @num_area;
 
-    IF @id_nivel_seg_emp = @id_nivel_seg_area OR
-        (@tipo_empleado <> 4 AND
-        (@nombre_id_nivel_seg_emp = 'Alto' OR
-        (@nombre_id_nivel_seg_emp = 'Medio' AND @nombre_id_nivel_seg_area = 'Bajo')))
-        SET @nReturn = 1;
-    ELSE
-        SET @nReturn = 0;
-    RETURN @nReturn;
+    IF @tipo_empleado = 0 AND (@id_nivel_seg_emp = @id_nivel_seg_area OR
+       (@nombre_id_nivel_seg_emp = 'Alto' OR (@nombre_id_nivel_seg_emp = 'Medio' AND @nombre_id_nivel_seg_area = 'Bajo')))
+        SET @return = 1;
+    ELSE 
+        IF @tipo_empleado = 1 AND EXISTS (SELECT *
+                                          FROM acceso
+                                          WHERE id_empleado = @id_empleado AND num_area = @num_area)
+            SET @return = 1;
+        ELSE
+            SET @return = 0;
+    RETURN @return;
 END;
 GO
